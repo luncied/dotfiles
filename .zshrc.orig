@@ -54,6 +54,8 @@ fi
 
 
 autoload -Uz add-zsh-hook
+autoload -Uz vcs_info
+precmd () { vcs_info }
 _comp_options+=(globdots)
 
 zstyle ':completion:*' menu select
@@ -63,6 +65,7 @@ zstyle ':completion:*' matcher-list \
 		'm:{a-zA-Z}={A-Za-z}' \
 		'+r:|[._-]=* r:|=*' \
 		'+l:|=*'
+zstyle ':vcs_info:*' formats ' %B%s-[%F{magenta}%f %F{yellow}%b%f]-'
 zstyle ':fzf-tab:*' fzf-flags --style=full --height=90% --pointer '>' --gutter ' ' \
                     --color 'pointer:green:bold,bg+:-1:,fg+:green:bold,info:blue:bold,marker:yellow:bold,hl:gray:bold,hl+:gray:bold' \
                     --input-label ' Search ' --color 'input-border:blue,input-label:blue:bold' \
@@ -173,6 +176,8 @@ source "$HOME/.eza.plugin.zsh"
 source "$HOME/.bat.plugin.zsh"
 
 autoload -Uz add-zsh-hook
+autoload -Uz vcs_info
+precmd () { vcs_info }
 _comp_options+=(globdots)
 
 # clip
