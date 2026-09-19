@@ -319,7 +319,7 @@ while true; do
 
   case $OPCION in
   1) do_install ;;
-  2) do_pull ;;
+  2) do_update ;;
   3) do_push ;;
   4) do_repair_links ;;
   5) do_restore ;;
