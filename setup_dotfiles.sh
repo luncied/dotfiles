@@ -19,7 +19,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     INSTALL_CMD="sudo pacman -Sy --needed --noconfirm"
     PACKAGES="zsh git eza bat neovim ripgrep fd gcc make npm unzip wget curl python python-pip xclip wl-clipboard python-pynvim"
   elif [[ "$ID" == "kali" || "$ID" == "parrot" || "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
-    sudo apt-get update
+    sudo apt-get update || true
     INSTALL_CMD="sudo apt-get install -y"
     PACKAGES="zsh git eza neovim ripgrep fd-find build-essential npm unzip wget curl python3 python3-pip xclip wl-clipboard python3-pynvim"
   fi
@@ -63,25 +63,63 @@ safe_link() {
 # RUTINAS PRINCIPALES
 # ==========================================
 do_install() {
-  echo "==> 1. Verificando dependencias base..."
-  $INSTALL_CMD $PACKAGES
+  echo "==> 1. Instalando dependencias del sistema..."
 
-  # Configuración específica para binarios en Debian/Kali
+  FAILED_PACKAGES=()
+
+  # Intentamos la instalación rápida en bloque
+  if ! $INSTALL_CMD $PACKAGES; then
+    echo -e "\n⚠️ Falló la instalación en bloque. Aislando paquetes problemáticos e instalando uno por uno...\n"
+    for pkg in $PACKAGES; do
+      if ! $INSTALL_CMD "$pkg" >/dev/null 2>&1; then
+        FAILED_PACKAGES+=("$pkg")
+        echo "❌ Falló: $pkg"
+      else
+        echo "✅ Instalado: $pkg"
+      fi
+    done
+  fi
+
+  # Gestiones específicas para Kali/Debian (bat y alias)
   if [[ "$OS_FAMILIA" == "linux" ]] && [[ "$ID" == "kali" || "$ID" == "parrot" || "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
-    $INSTALL_CMD bat
-    mkdir -p ~/.local/bin
-    ln -sf /usr/bin/batcat ~/.local/bin/bat || true
-    ln -sf /usr/bin/fdfind ~/.local/bin/fd || true
+    if ! $INSTALL_CMD bat >/dev/null 2>&1; then
+      FAILED_PACKAGES+=("bat")
+    else
+      mkdir -p ~/.local/bin
+      ln -sf /usr/bin/batcat ~/.local/bin/bat 2>/dev/null || true
+      ln -sf /usr/bin/fdfind ~/.local/bin/fd 2>/dev/null || true
+    fi
   fi
 
-  # Configuración específica de Python para macOS
+  # Gestiones específicas para macOS (pynvim)
   if [[ "$OS_FAMILIA" == "macos" ]]; then
-    if command -v pip3 &>/dev/null; then pip3 install --user --upgrade --break-system-packages pynvim || true; fi
+    if command -v pip3 &>/dev/null; then
+      if ! pip3 install --user --upgrade --break-system-packages pynvim >/dev/null 2>&1; then
+        FAILED_PACKAGES+=("pynvim (pip3)")
+      fi
+    fi
   fi
 
-  echo "==> 2. Preparando entorno de Neovim y Zsh..."
+  # ---------------------------------------------------------
+  # REPORTE DE ERRORES
+  # ---------------------------------------------------------
+  if [ ${#FAILED_PACKAGES[@]} -ne 0 ]; then
+    echo -e "\n======================================================"
+    echo " ⚠️  REPORTE DE PAQUETES NO INSTALADOS"
+    echo "======================================================"
+    for failed in "${FAILED_PACKAGES[@]}"; do
+      echo "   - $failed"
+    done
+    echo "======================================================"
+    echo "El script continuará, pero algunas herramientas podrían no funcionar al 100%."
+    read -p "Presiona Enter para continuar de todos modos..."
+  else
+    echo "✅ Todas las dependencias se instalaron correctamente."
+  fi
+
+  echo -e "\n==> 2. Imponiendo configuraciones de Usuario..."
   mkdir -p "$DOTFILES_DIR/.config"
-  mkdir -p "$BACKUP_DIR"
+  mkdir -p "$HOME/.config"
 
   if [ ! -d "$DOTFILES_DIR/.config/nvim" ]; then
     echo "✨ Descargando LazyVim base en dotfiles..."
