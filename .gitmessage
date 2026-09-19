@@ -1,0 +1,16 @@
+<tipo>(<alcance>): <título descriptivo>
+
+[Cuerpo detallado del commit explicando el por qué de los cambios]
+
+-------------------☾ ꥟--------------------
+  Signed by : Edgar Luna
+              <luncie.vii@gmail.com>
+
+  Refs :
+-------------------𖤓 ༄--------------------
+# Tipos comunes: 
+# feat     (nueva función)
+# fix      (corrección de error)
+# chore    (mantenimiento, actualizar dependencias)
+# refactor (optimización de código sin cambiar funcionalidad)
+# docs     (cambios en README o documentación)

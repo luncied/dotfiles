@@ -133,7 +133,7 @@ do_update() {
 }
 
 do_push() {
-  echo "==> Evaluando tus modificaciones locales..."
+  echo "==> Evaluando cambios en tu entorno local..."
   cd "$DOTFILES_DIR"
   if [ ! -d ".git" ]; then
     git init
@@ -141,15 +141,18 @@ do_push() {
     git remote add origin "$REPO_URL"
   fi
   git status -s
-  read -p "¿Mensaje del commit? (Enter para usar default): " msg
-  msg=${msg:-"chore: actualizacion de sistema (zsh, nvim, p10k)"}
 
   git add .
-  git commit -m "$msg" || echo "No hay cambios nuevos para confirmar."
-  git push -u origin main
-  echo "✅ Cambios subidos a GitHub exitosamente."
-}
+  echo "Abriendo Neovim para redactar el commit..."
+  # Al quitar el '-m', Git invocará automáticamente a Neovim con tu template
+  git commit || {
+    echo "No hay cambios nuevos o el commit fue cancelado."
+    return
+  }
 
+  git push -u origin main
+  echo "✅ Cambios subidos a GitHub."
+}
 do_relink() {
   echo "==> 🔨 Reparando symlinks rotos (Imponiendo repositorio sin instalar paquetes)..."
   mkdir -p "$BACKUP_DIR"
@@ -195,34 +198,102 @@ do_restore() {
   echo "🎉 Restauración completada. Los enlaces al repositorio han sido eliminados."
 }
 
-# ==========================================
-# MENÚ INTERACTIVO
-# ==========================================
-clear
-echo "======================================================"
-echo " ⚙️ GESTOR DE DOTFILES MULTIPLATAFORMA (STRICT MODE)"
-echo "======================================================"
-echo " 1) 🚀 Instalar e Imponer Repo (Mueve el sistema a backup)"
-echo " 2) ⬇️ Actualizar de GitHub (Git Pull - Traer cambios)"
-echo " 3) ⬆️ Sincronizar a GitHub (Git Push - Subir cambios)"
-echo " 4) 🔨 Reparar Enlaces (Re-conecta los symlinks rotos)"
-echo " 5) ⏪ Restaurar Sistema (Recupera los archivos del backup)"
-echo " 6) ❌ Salir"
-echo "======================================================"
-read -p "Selecciona una opción [1-6]: " OPCION
+do_fonts() {
+  echo "==> 🔠 Instalando MesloLGS Nerd Font..."
+  mkdir -p "$HOME/.local/share/fonts"
+  cd "$HOME/.local/share/fonts"
+  wget -q -O "MesloLGS NF Regular.ttf" "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf"
+  wget -q -O "MesloLGS NF Bold.ttf" "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf"
+  wget -q -O "MesloLGS NF Italic.ttf" "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf"
+  wget -q -O "MesloLGS NF Bold Italic.ttf" "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf"
 
-case $OPCION in
-1) do_install ;;
-2) do_update ;;
-3) do_push ;;
-4) do_relink ;;
-5) do_restore ;;
-6)
-  echo "Saliendo..."
-  exit 0
-  ;;
-*)
-  echo "Opción inválida."
-  exit 1
-  ;;
-esac
+  if command -v fc-cache &>/dev/null; then fc-cache -f -v &>/dev/null; fi
+  echo "✅ Fuentes instaladas. Recuerda configurar tu terminal para usar 'MesloLGS NF'."
+}
+
+do_git_setup() {
+  echo "==> 🔑 Configurando Git (Llave SSH y Template)..."
+
+  # 1. Configurar Identidad y Template
+  local template_file="$DOTFILES_DIR/.gitmessage"
+  if [ ! -f "$template_file" ]; then
+    echo "📝 Creando template de commit personalizado..."
+    cat <<'EOF' >"$template_file"
+<tipo>(<alcance>): <título descriptivo>
+
+[Cuerpo detallado del commit explicando el por qué de los cambios]
+
+-------------------☾ ꥟--------------------
+  Signed by : Edgar Luna
+              <luncie.vii@gmail.com>
+
+  Refs :
+-------------------𖤓 ༄--------------------
+# Tipos comunes: 
+# feat     (nueva función)
+# fix      (corrección de error)
+# chore    (mantenimiento, actualizar dependencias)
+# refactor (optimización de código sin cambiar funcionalidad)
+# docs     (cambios en README o documentación)
+EOF
+  fi
+
+  git config --global commit.template "$template_file"
+  git config --global user.name "Edgar Luna"
+  git config --global user.email "luncie.vii@gmail.com"
+  git config --global core.editor "nvim"
+
+  # 2. Configurar Llave SSH
+  if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
+    ssh-keygen -t ed25519 -C "luncie.vii@gmail.com" -f "$HOME/.ssh/id_ed25519" -N ""
+    eval "$(ssh-agent -s)" >/dev/null
+    ssh-add "$HOME/.ssh/id_ed25519"
+    echo "✅ Llave SSH generada exitosamente."
+  else
+    echo "✅ Ya existe una llave SSH en este sistema."
+  fi
+
+  echo "✅ Git configurado globalmente con tu firma y template."
+  echo -e "\nCopia el siguiente bloque y pégalo en GitHub (Settings -> SSH Keys):"
+  echo -e "\e[36m--------------------------------------------------------\e[0m"
+  cat "$HOME/.ssh/id_ed25519.pub"
+  echo -e "\e[36m--------------------------------------------------------\e[0m"
+}
+
+# ==========================================
+# MENÚ INTERACTIVO (LOOP)
+# ==========================================
+while true; do
+  clear
+  echo "======================================================"
+  echo " ⚙️ GESTOR DE DOTFILES DIRECTO"
+  echo "======================================================"
+  echo " 1) 🚀 Instalar (Respalda sistema y fuerza repo)"
+  echo " 2) ⬇️ Descargar de GitHub (Actualizar sistema)"
+  echo " 3) ⬆️ Subir a GitHub (Guardar cambios locales)"
+  echo " 4) 🔨 Reparar Enlaces (Reconectar symlinks rotos)"
+  echo " 5) ⏪ Restaurar Sistema (Deshacer instalación)"
+  echo " 6) 🔠 Instalar Nerd Fonts (MesloLGS NF)"
+  echo " 7) 🔑 Configurar GitHub (Llave SSH y Firma)"
+  echo " 8) ❌ Salir"
+  echo "======================================================"
+  read -p "Selecciona una opción [1-8]: " OPCION
+
+  case $OPCION in
+  1) do_install ;;
+  2) do_pull ;;
+  3) do_push ;;
+  4) do_repair_links ;;
+  5) do_restore ;;
+  6) do_fonts ;;
+  7) do_git_setup ;;
+  8)
+    echo "Saliendo del gestor..."
+    exit 0
+    ;;
+  *) echo "Opción inválida." ;;
+  esac
+
+  echo ""
+  read -p "Presiona Enter para volver al menú..."
+done
