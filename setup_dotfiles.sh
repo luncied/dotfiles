@@ -153,7 +153,7 @@ do_push() {
   git push -u origin main
   echo "✅ Cambios subidos a GitHub."
 }
-do_relink() {
+do_repair_links() {
   echo "==> 🔨 Reparando symlinks rotos (Imponiendo repositorio sin instalar paquetes)..."
   mkdir -p "$BACKUP_DIR"
   safe_link "$HOME/.zshrc" ".zshrc"
