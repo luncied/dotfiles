@@ -75,6 +75,21 @@ bindkey "^I" expand-or-complete-with-dots
 bindkey '^[[3~' delete-char      # Tecla Suprimir (Del)
 bindkey "^[[H" beginning-of-line # Tecla Inicio (Home)
 bindkey "^[[F" end-of-line       # Tecla Fin (End)
+bindkey '^R' history-incremental-search-backward # Búsqueda nativa de historial
+
+
+# ==========================================
+# FZF: CONFIGURACION PARA EL HISTORIAL 
+# ==========================================
+# Integración multiplataforma de FZF (Si está instalado)
+if command -v fzf &> /dev/null; then
+    # Arch Linux
+    [[ -f /usr/share/fzf/key-bindings.zsh ]] && source /usr/share/fzf/key-bindings.zsh
+    # Debian / Kali
+    [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+    # macOS (Homebrew)
+    [[ -f $(brew --prefix 2>/dev/null)/opt/fzf/shell/key-bindings.zsh ]] && source $(brew --prefix 2>/dev/null)/opt/fzf/shell/key-bindings.zsh
+fi
 
 # ==========================================
 # PLUGINS MULTIPLATAFORMA (Arch / Debian / macOS)

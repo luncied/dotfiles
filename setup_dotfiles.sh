@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   source /etc/os-release
   if [[ "$ID" == "arch" || "$ID_LIKE" == *"arch"* ]]; then
     INSTALL_CMD="sudo pacman -Sy --needed --noconfirm"
-    PACKAGES="zsh git eza bat neovim ripgrep fd gcc make npm unzip wget curl python python-pip xclip wl-clipboard python-pynvim"
+    PACKAGES="zsh git eza bat neovim ripgrep fd fzf gcc make npm unzip wget curl python python-pip xclip wl-clipboard python-pynvim"
   elif [[ "$ID" == "kali" || "$ID" == "parrot" || "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
     sudo apt-get update || true
     INSTALL_CMD="sudo apt-get install -y"
